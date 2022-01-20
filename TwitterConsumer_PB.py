@@ -18,20 +18,20 @@ def create_post_data(label: str, input: dict) -> list:
              'day': datetime.now().day,
              'hour': datetime.now().hour,
              'minute': group_by_15m(datetime.now().minute),
-             'created_at': datetime.now()}]
+             'created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]
 
 def post_message(message, endpoint):
     res = requests.post(endpoint, json.dumps(message).encode('utf-8'))
     print("status:{} | message={}".format(res.status_code, message))
 
 if __name__ == '__main__':
-    config = configparser.ConfigParser()
+    config = configparser.RawConfigParser()
     config.read('config.ini')
     server_ip = config['KAFKA']['server_ip']
     api_endpoint = config['POWER_BI']['endpoint']
     topic = 'Tweets'
     wide_search = '$'
-    narrow_search = '^\$[A-Z]*'
+    narrow_search = '^\$[A-Z]+'
 
     consumer = KafkaConsumer(
         topic,
@@ -42,8 +42,9 @@ if __name__ == '__main__':
         j = json.loads(message.value)
         data = j['data']
         if wide_search in data['text']:
-            map(lambda x:
-                    post_message(create_post_data(x, data), api_endpoint)
-                    if re.search(narrow_search, x) else None,
-                data['text'].split(' '))
+            for label in data['text'].split(' '):
+                if re.search(narrow_search, label):
+                    message = create_post_data(label, data)
+                    post_message(message, api_endpoint)
+        print("message={}".format(data['text']))
         time.sleep(0.5)

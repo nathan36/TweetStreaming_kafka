@@ -75,7 +75,7 @@ class Streamer:
                 json_response = json.loads(response_line)
                 print(f'Producing message @ {datetime.now()} | Message = {str(json_response)}')
                 producer.send(topic, json_response)
-                time_to_sleep = random.randint(1, 11)
+                time_to_sleep = random.randint(1, 5)
                 time.sleep(time_to_sleep)
 
 
